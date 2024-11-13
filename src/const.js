@@ -8,4 +8,4 @@ export const colors = [
 ];
 export const strokeWidthOptions = [5, 10, 15, 20];
 
-export const shapes = ["line", "square", "circle", "triangle"];
+export const shapes = ["line", "rectangle", "circle", "triangle"];
