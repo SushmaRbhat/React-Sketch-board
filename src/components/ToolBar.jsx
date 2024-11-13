@@ -1,15 +1,14 @@
 import React from "react";
 import { FaEraser } from "react-icons/fa";
-import { BsSquare, BsCircle, BsTriangle, BsPencil } from "react-icons/bs";
-import { PiLineVerticalBold } from "react-icons/pi";
-import { LuUndo2, LuRedo2 } from "react-icons/lu";
-import { BsDashLg } from "react-icons/bs";
+import { BsCircle, BsTriangle, BsPencil, BsDashLg } from "react-icons/bs";
+import { PiLineVerticalBold, PiRectangle, PiTextTBold } from "react-icons/pi";
+import { LuUndo2, LuRedo2, LuDownload } from "react-icons/lu";
 import "./Board.css";
 import { colors, shapes, strokeWidthOptions } from "../const";
 
 const shapeObj = {
   line: <PiLineVerticalBold />,
-  square: <BsSquare />,
+  rectangle: <PiRectangle />,
   circle: <BsCircle />,
   triangle: <BsTriangle />,
 };
@@ -26,12 +25,14 @@ const ToolBar = ({
   strokeWidth,
   setStrokeWidth,
   shape,
-  eraser,
+  tool,
   selectEraser,
   selectPencil,
   selectShape,
   handleUndo,
   handleRedo,
+  handleDownload,
+  addText,
   pointer,
   history,
 }) => {
@@ -68,7 +69,6 @@ const ToolBar = ({
                 onClick={() => setStrokeWidth(wdth)}
               >
                 <BsDashLg
-                  //fontSize={strokeSize[wdth]}
                   style={{
                     strokeWidth: strokeSize[wdth],
                   }}
@@ -81,18 +81,22 @@ const ToolBar = ({
         <span className="subtitle">Tools</span>
         <div className="color-button-wrapper">
           <button
-            className={
-              eraser || shape !== null ? "color-btn" : "color-btn active-btn"
-            }
+            className={tool === "pencil" ? "color-btn active-btn" : "color-btn"}
             onClick={selectPencil}
           >
             <BsPencil />
           </button>
           <button
-            className={!eraser ? "color-btn" : "color-btn active-btn"}
+            className={tool === "eraser" ? "color-btn active-btn" : "color-btn"}
             onClick={selectEraser}
           >
             <FaEraser />
+          </button>
+          <button
+            className={tool === "text" ? "color-btn active-btn" : "color-btn"}
+            onClick={addText}
+          >
+            <PiTextTBold />
           </button>
         </div>
       </div>
@@ -112,6 +116,7 @@ const ToolBar = ({
         </div>
       </div>
       <div>
+        <span className="subtitle">Actions</span>
         <div className="color-button-wrapper">
           <button
             className="color-btn"
@@ -126,6 +131,13 @@ const ToolBar = ({
             onClick={handleRedo}
           >
             <LuRedo2 />
+          </button>
+        </div>
+      </div>
+      <div>
+        <div className="">
+          <button className="color-btn" onClick={handleDownload}>
+            <LuDownload />
           </button>
         </div>
       </div>

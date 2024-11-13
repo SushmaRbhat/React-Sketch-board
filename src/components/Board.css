@@ -7,7 +7,7 @@
 .toolbar {
   width: 10%;
   position: absolute;
-  top: 10%;
+  top: 3%;
   left: 20px;
   border-radius: 4px;
   background-color: #f8f8f8;
@@ -19,14 +19,17 @@
   min-width: 100px;
 }
 .color-button-wrapper {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   gap: 10px;
   margin-top: 6px;
 }
 .color-btn {
   height: 30px;
   width: 100%;
+  flex-basis: 43%;
   border: none;
   outline: none;
   background-color: transparent;
@@ -72,4 +75,5 @@
 }
 .toolbar .subtitle {
   font-size: 12px;
+  font-weight: 600;
 }

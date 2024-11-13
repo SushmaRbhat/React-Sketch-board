@@ -10,13 +10,14 @@ function Board() {
   const [stokeColor, setStrokeColor] = useState("#212121");
   const [strokeWidth, setStrokeWidth] = useState(5);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [eraser, setEraser] = useState(false);
-  const [text, setText] = useState(null);
+  const [tool, setTool] = useState("pencil");
   const [shape, setShape] = useState(null);
   const [saveData, setSaveData] = useState(null);
   const [drawHistory, setDrawHistory] = useState([]);
-
   const [historyPtr, setHistoryPtr] = useState(0);
+  const [showInput, setShowInput] = useState(false);
+  const textRef = useRef(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.width = window.innerWidth; // Set canvas width
@@ -50,23 +51,24 @@ function Board() {
   }, []);
 
   useEffect(() => {
-    const handleConfig = (color, width) => {
-      contextRef.current.strokeStyle = eraser ? "#fff" : color;
-      contextRef.current.lineWidth = eraser ? 10 : width;
+    const handleConfig = (color, width, tool) => {
+      contextRef.current.strokeStyle = tool === "eraser" ? "#fff" : color;
+      contextRef.current.lineWidth = width;
     };
-    handleConfig(stokeColor, strokeWidth);
+    handleConfig(stokeColor, strokeWidth, tool);
     const handleChangeColor = (path) => {
-      handleConfig(path.color, path.width);
+      handleConfig(path.color, path.width, path.tool);
     };
     socket.on("changeConfig", handleChangeColor);
     socket.emit("changeConfig", {
       color: stokeColor,
       width: strokeWidth,
+      tool: tool,
     });
     return () => {
       socket.off("changeConfig", handleChangeColor);
     };
-  }, [stokeColor, eraser, strokeWidth]);
+  }, [stokeColor, tool, strokeWidth]);
 
   const saveState = () => {
     const canvas = canvasRef.current;
@@ -83,9 +85,12 @@ function Board() {
     const { offsetX, offsetY } = nativeEvent;
     setStartPos({ x: offsetX, y: offsetY });
     setIsDrawing(true);
-    if (shape === null) {
+    if (shape === null && (tool === "pencil" || tool === "eraser")) {
       contextRef.current.beginPath();
       contextRef.current.moveTo(offsetX, offsetY);
+    }
+    if (tool === "text") {
+      setShowInput(true);
     } else {
       const context = contextRef.current;
       const imgData = context.getImageData(
@@ -123,25 +128,25 @@ function Board() {
   const endDrawing = ({ nativeEvent }) => {
     if (!isDrawing) return;
     setIsDrawing(false);
+    // if (tool === "text") return;
     if (shape) {
       setSaveData(null);
     }
     contextRef.current.closePath();
-
     saveState();
   };
 
   const selectShape = (shapeType) => {
     setShape(shapeType);
-    setEraser(false);
+    setTool("");
   };
   const selectPencil = () => {
+    setTool("pencil");
     setShape(null);
-    setEraser(false);
   };
   const selectEraser = () => {
     setShape(null);
-    setEraser(!eraser);
+    setTool("eraser");
   };
   const handleColor = (color) => {
     setStrokeColor(color);
@@ -153,13 +158,12 @@ function Board() {
     const context = contextRef.current;
 
     context.putImageData(saveData, 0, 0);
-    let side;
+
     const { x: startX, y: startY } = startPos;
     context.beginPath();
     switch (shape) {
-      case "square":
-        side = Math.max(Math.abs(x - startX), Math.abs(y - startY));
-        context.strokeRect(startX, startY, side, side);
+      case "rectangle":
+        context.strokeRect(startX, startY, x - startX, y - startY);
         break;
       case "circle":
         const radius =
@@ -193,6 +197,7 @@ function Board() {
     const previousImageData = drawHistory[historyPtr - 1];
     context.putImageData(previousImageData, 0, 0);
   };
+
   const handleRedo = () => {
     if (historyPtr >= drawHistory.length - 1) return; //  redos not available 6>6
     const context = contextRef.current;
@@ -201,6 +206,30 @@ function Board() {
     setHistoryPtr((prev) => prev + 1);
     context.putImageData(nextImageData, 0, 0);
   };
+
+  const handelDownload = () => {
+    const canvas = canvasRef.current;
+    let canvasUrl = canvas.toDataURL();
+    const anchorElement = document.createElement("a");
+    anchorElement.href = canvasUrl;
+    anchorElement.download = "drawing";
+    anchorElement.click();
+  };
+
+  const selectText = () => {
+    setTool("text");
+    setShape(null);
+  };
+
+  const handleTextSave = (e) => {
+    const context = contextRef.current;
+    context.fillStyle = stokeColor;
+    context.font = "16px Arial";
+    context.textBaseline = "middle";
+    context.fillText(e.target.value, startPos.x, startPos.y);
+    setShowInput(false);
+  };
+
   return (
     <div className="board-container">
       <ToolBar
@@ -209,15 +238,32 @@ function Board() {
         strokeWidth={strokeWidth}
         setStrokeWidth={handleStrokeSize}
         shape={shape}
-        eraser={eraser}
+        tool={tool}
         selectEraser={selectEraser}
         selectPencil={selectPencil}
         selectShape={selectShape}
         handleUndo={handleUndo}
         handleRedo={handleRedo}
+        handleDownload={handelDownload}
+        addText={selectText}
         pointer={historyPtr}
         history={drawHistory}
       />
+      {showInput ? (
+        <input
+          autoFocus
+          type="text"
+          ref={textRef}
+          style={{
+            position: "absolute",
+            left: startPos.x,
+            top: startPos.y,
+            outline: "none",
+            transform: "translateY(19px)",
+          }}
+          onMouseOut={handleTextSave}
+        />
+      ) : null}
       <canvas
         style={{
           overscrollBehavior: "none",
